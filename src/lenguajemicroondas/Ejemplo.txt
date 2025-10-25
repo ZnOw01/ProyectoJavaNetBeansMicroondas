@@ -1,0 +1,6 @@
+abrir cerrar encender apagar
+potencia pausar cocinar tiempo
+ABRIR CERRAR ENCENDER APAGAR
+POTENCIA PAUSAR COCINAR TIEMPO
+comando_invalido abrir 123
+encender potencia 5 tiempo 2:30 cocinar
