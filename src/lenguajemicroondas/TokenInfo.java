@@ -2,7 +2,7 @@ package lenguajemicroondas;
 
 /**
  *
- * @author guill
+ * @author Calabaza
  */
 public class TokenInfo {
     private Tokens tokenType;
