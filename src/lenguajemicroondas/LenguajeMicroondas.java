@@ -1,9 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
 package lenguajemicroondas;
 
+import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,54 +8,89 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
+ * Punto de entrada de la aplicación.
  *
- * @author guill
+ * <p>
+ * Ofrece utilidades para regenerar los analizadores y, principalmente, para
+ * mostrar la ventana principal del proyecto. Se eliminó la dependencia de
+ * rutas absolutas para que el código sea fácil de ejecutar en cualquier
+ * equipo.
+ * </p>
  */
-public class LenguajeMicroondas {
-    
+public final class LenguajeMicroondas {
+
+    private static final Path SOURCE_DIRECTORY = Paths.get("src", "lenguajemicroondas");
+    private static final Path PROJECT_ROOT = Paths.get("");
+
+    private LenguajeMicroondas() {
+        // Evitar instanciación
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> new Ventana().setVisible(true));
+    }
+
     /**
-     * @param args the command line arguments
+     * Muestra la interfaz para comprobar el analizador sintáctico.
      */
-    public static void checkParser(){
-        ventana window = new ventana();
-        window.setVisible(true);
+    public static void checkParser() {
+        EventQueue.invokeLater(() -> new Ventana().setVisible(true));
     }
-    public static void checkLexer(){
-        ventana window = new ventana();
-        window.setVisible(true);
+
+    /**
+     * Muestra la interfaz para comprobar el analizador léxico.
+     */
+    public static void checkLexer() {
+        EventQueue.invokeLater(() -> new Ventana().setVisible(true));
     }
-    public static void generarLexer(){
-        String ruta =  "D:\\Programacion\\Java\\LenguajeMicroondas\\src\\lenguajemicroondas\\entrada.jflex";
-        File archivo = new File(ruta);
+
+    /**
+     * Regenera el analizador léxico a partir del archivo entrada.jflex.
+     */
+    public static void generarLexer() {
+        Path lexerPath = SOURCE_DIRECTORY.resolve("entrada.jflex");
+        File archivo = lexerPath.toFile();
+        if (!archivo.exists()) {
+            throw new IllegalStateException("No se encontró el archivo de definición léxica: " + lexerPath);
+        }
         JFlex.Main.generate(archivo);
     }
-    public static void main(String[] args) throws Exception {
-        //generarLexer();
-        generarCup();
+
+    /**
+     * Regenera el analizador sintáctico y mueve los archivos generados a la
+     * carpeta de código fuente.
+     */
+    public static void generarCup() throws Exception {
+        Path cupFile = SOURCE_DIRECTORY.resolve("Grammar.cup");
+        if (!Files.exists(cupFile)) {
+            throw new IllegalStateException("No se encontró la gramática: " + cupFile);
+        }
+
+        String[] cupArguments = {"-parser", "Syntactic", cupFile.toString()};
+
+        Path cupLexer = SOURCE_DIRECTORY.resolve("entradaCup.jflex");
+        File cupLexerFile = cupLexer.toFile();
+        if (cupLexerFile.exists()) {
+            JFlex.Main.generate(cupLexerFile);
+        }
+
+        java_cup.Main.main(cupArguments);
+
+        moveGeneratedFile("sym.java", SOURCE_DIRECTORY);
+        moveGeneratedFile("Syntactic.java", SOURCE_DIRECTORY);
     }
-    public static void generarCup() throws IOException, Exception{
-        String path0 =  "D:\\Programacion\\Java\\LenguajeMicroondas\\";
-        String path = path0 +  "src\\lenguajemicroondas\\";
-        String rutaC = path + "entradaCup.jflex";
-        String fileG = "Syntactic.java";
-        String[] rutaS = {"-parser", "Syntactic", path + "Grammar.cup"};
-        File archivo;
-        archivo = new File(rutaC);
-        JFlex.Main.generate(archivo);
-        System.out.println("Fin Lexico");
-        java_cup.Main.main(rutaS);
-        System.out.println("ruta---");
-        
-        Path rutaSym = Paths.get(path + "sym.java");
-        if (Files.exists(rutaSym)){
-            Files.delete(rutaSym);
+
+    private static void moveGeneratedFile(String fileName, Path destinationDirectory) throws IOException {
+        Path generatedFile = PROJECT_ROOT.resolve(fileName);
+        if (!Files.exists(generatedFile)) {
+            return;
         }
-        Files.move(Paths.get(path0 + "sym.java"), Paths.get(path + "sym.java"));
-        
-        Path rutaSim = Paths.get(path + fileG);
-        if(Files.exists(rutaSim)){
-            Files.delete(rutaSim);
+
+        Path destination = destinationDirectory.resolve(fileName);
+        if (Files.exists(destination)) {
+            Files.delete(destination);
         }
-        Files.move(Paths.get(path0 + fileG), Paths.get(path + fileG));
+
+        Files.move(generatedFile, destination);
     }
 }
