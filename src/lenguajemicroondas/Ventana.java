@@ -2,6 +2,7 @@ package lenguajemicroondas;
 
 import Cup.LexerCup;
 import Cup.Syntactic;
+import Cup.sym;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -33,12 +34,7 @@ import java_cup.runtime.Symbol;
 
 /**
  * Ventana principal de la aplicación del Lenguaje Microondas.
- *
- * <p>
- * La clase se encarga de manejar la interfaz gráfica y la interacción con los
- * analizadores léxico y sintáctico. El objetivo es que el código sea fácil de
- * seguir y que la interfaz ofrezca mensajes claros al usuario.
- * </p>
+ * Muestra análisis léxico y sintáctico usando JFlex + CUP (LexerCup / Syntactic).
  */
 public class Ventana extends JFrame {
 
@@ -54,15 +50,14 @@ public class Ventana extends JFrame {
     private String lastLexicalReport = "";
     private String lastSyntacticReport = "";
 
-    /**
-     * Construye la ventana principal configurando la interfaz y los eventos.
-     */
     public Ventana() {
         super(APPLICATION_TITLE);
         configureWindow();
         add(createToolbar(), BorderLayout.NORTH);
         add(createResultsPanel(), BorderLayout.CENTER);
     }
+
+    /* ----------------------------- UI ------------------------------ */
 
     private void configureWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,7 +117,7 @@ public class Ventana extends JFrame {
         return scrollPane;
     }
 
-    private JTextArea createTextArea(boolean editable) {
+    private static JTextArea createTextArea(boolean editable) {
         JTextArea area = new JTextArea();
         area.setEditable(editable);
         area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
@@ -130,20 +125,13 @@ public class Ventana extends JFrame {
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
 
-        if (editable) {
-            area.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyReleased(KeyEvent e) {
-                    lastLexicalReport = "";
-                    lastSyntacticReport = "";
-                }
-            });
-        } else {
+        if (!editable) {
             area.setBackground(new java.awt.Color(245, 245, 245));
         }
-
         return area;
     }
+
+    /* --------------------------- Acciones -------------------------- */
 
     private void loadFile() {
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -170,6 +158,14 @@ public class Ventana extends JFrame {
             return;
         }
 
+        // Al escribir, limpia resultados anteriores
+        inputArea.addKeyListener(new KeyAdapter() {
+            @Override public void keyReleased(KeyEvent e) {
+                lastLexicalReport = "";
+                lastSyntacticReport = "";
+            }
+        });
+
         try {
             lastLexicalReport = runLexicalAnalysis(text);
             lexicalResultArea.setText(lastLexicalReport);
@@ -184,40 +180,45 @@ public class Ventana extends JFrame {
         }
     }
 
+    /* ---------------------- Análisis léxico ------------------------ */
+
+    /** Realiza el escaneo con Cup.LexerCup y devuelve un reporte amigable. */
     private String runLexicalAnalysis(String text) throws IOException {
         StringBuilder report = new StringBuilder();
         report.append("=== ANÁLISIS LÉXICO DEL MICROONDAS ===\n\n");
 
         Reader reader = new StringReader(text);
-        MicroondasLexer lexer = new MicroondasLexer(reader);
+        LexerCup lexer = new LexerCup(reader);
 
         int tokenCount = 0;
         int errorCount = 0;
 
         while (true) {
-            Tokens token = lexer.yylex();
-            if (token == null) {
-                break;
-            }
+            Symbol tok = lexer.next_token();
+            if (tok == null || tok.sym == sym.EOF) break;
 
             tokenCount++;
-            switch (token) {
-                case ERROR -> {
-                    report.append("ERROR: Carácter no válido '")
-                          .append(lexer.yytext())
-                          .append("'\n");
-                    errorCount++;
-                }
-                case Abrir, Cerrar, Encender, Apagar, Potencia, Pausar, Cocinar, Tiempo ->
-                    report.append("[ Comando: ")
-                          .append(lexer.yytext())
-                          .append(" : ")
-                          .append(token)
-                          .append(" ]\n");
+            String name = tokenName(tok.sym);
+
+            if (tok.sym == sym.ERROR) {
+                report.append("ERROR: Carácter no válido '")
+                      .append(tok.value)
+                      .append("'\n");
+                errorCount++;
+                continue;
+            }
+
+            // Mostrar tokens relevantes con su lexema/valor
+            switch (tok.sym) {
+                case sym.Numero -> report.append("[ Numero: ").append(tok.value).append(" ]\n");
+                case sym.Abrir, sym.Cerrar, sym.Encender, sym.Apagar,
+                     sym.Potencia, sym.Pausar, sym.Cocinar, sym.Tiempo ->
+                        report.append("[ Comando: ").append(tok.value)
+                              .append(" : ").append(name).append(" ]\n");
+                case sym.DOS_PUNTOS, sym.MAS, sym.MENOS ->
+                        report.append("[ Símbolo: ").append(name).append(" ]\n");
                 default ->
-                    report.append("[ Token: ")
-                          .append(token)
-                          .append(" ]\n");
+                        report.append("[ Token: ").append(name).append(" ]\n");
             }
         }
 
@@ -228,6 +229,8 @@ public class Ventana extends JFrame {
 
         return report.toString();
     }
+
+    /* -------------------- Análisis sintáctico ---------------------- */
 
     private String runSyntacticAnalysis(String text) {
         StringBuilder report = new StringBuilder();
@@ -262,8 +265,8 @@ public class Ventana extends JFrame {
 
                 report.append("Posibles soluciones:\n");
                 report.append("  • Verifica que los comandos estén bien escritos\n");
-                report.append("  • Revisa que la sintaxis de Potencia incluya número seguido de + o -\n");
-                report.append("  • Confirma que Tiempo tenga formato: número o número:número\n");
+                report.append("  • Revisa que la sintaxis de Potencia incluya número (opcional + o -)\n");
+                report.append("  • Confirma que Tiempo tenga formato número o número:número\n");
                 report.append("  • Asegúrate de que los comandos estén en el orden correcto\n\n");
             } else {
                 report.append("No se pudo determinar la ubicación exacta del error.\n");
@@ -273,6 +276,27 @@ public class Ventana extends JFrame {
 
         report.append("=== FIN DEL ANÁLISIS SINTÁCTICO ===");
         return report.toString();
+    }
+
+    /* ----------------------------- Utils --------------------------- */
+
+    private static String tokenName(int id) {
+        // Mapea ids de sym.* a nombres legibles
+        if (id == sym.Numero)      return "Numero";
+        if (id == sym.DOS_PUNTOS)  return "DOS_PUNTOS";
+        if (id == sym.MAS)         return "MAS";
+        if (id == sym.MENOS)       return "MENOS";
+        if (id == sym.ERROR)       return "ERROR";
+        if (id == sym.Abrir)       return "Abrir";
+        if (id == sym.Cerrar)      return "Cerrar";
+        if (id == sym.Encender)    return "Encender";
+        if (id == sym.Apagar)      return "Apagar";
+        if (id == sym.Potencia)    return "Potencia";
+        if (id == sym.Pausar)      return "Pausar";
+        if (id == sym.Cocinar)     return "Cocinar";
+        if (id == sym.Tiempo)      return "Tiempo";
+        if (id == sym.EOF)         return "EOF";
+        return "TOK(" + id + ")";
     }
 
     private void saveReports() {

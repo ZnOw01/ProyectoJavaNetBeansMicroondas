@@ -648,7 +648,7 @@ public class LexerCup implements java_cup.runtime.Scanner {
           }
         case 22: break;
         case 3: 
-          { return symbol(sym.Numero, new Integer(yytext()));
+          { return symbol(sym.Numero, Integer.valueOf(yytext()));
           }
         case 23: break;
         case 11: 

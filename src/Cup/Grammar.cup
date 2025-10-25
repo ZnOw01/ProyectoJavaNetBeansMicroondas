@@ -1,15 +1,19 @@
 package Cup;
 
-import java_cup.runtime.Symbol;
+import java_cup.runtime.*;
 
-parser code 
-{:
+/* ====== Código del parser ====== */
+parser code {:
     private Symbol s;
-    
+
+    @Override
     public void syntax_error(Symbol s){
         this.s = s;
-        System.out.println("Error sintáctico en línea " + (s.left + 1) + ", columna " + (s.right + 1) + 
-                          ". Token inesperado: " + s.value);
+        System.out.println(
+            "Error sintáctico en línea " + (s.left + 1) +
+            ", columna " + (s.right + 1) +
+            ". Token inesperado: " + s.value
+        );
     }
 
     public Symbol getS(){
@@ -17,54 +21,61 @@ parser code
     }
 :};
 
-terminal Abrir, Cerrar, Encender, Apagar, Potencia, Pausar, Cocinar, Tiempo, 
-         Numero, DOS_PUNTOS, MAS, MENOS, ERROR;
+/* ====== Símbolos léxicos ====== */
+/* ¡Importante! Numero debe ser Integer para recibir el valor del lexer */
+terminal Integer Numero;
+terminal DOS_PUNTOS, MAS, MENOS, ERROR;
+terminal Abrir, Cerrar, Encender, Apagar, Potencia, Pausar, Cocinar, Tiempo;
 
-non terminal PROGRAMA, COMANDOS, COMANDO, COMANDO_ABRIR, COMANDO_CERRAR, 
-            COMANDO_ENCENDER, COMANDO_APAGAR, COMANDO_POTENCIA, COMANDO_PAUSAR,
-            COMANDO_COCINAR, COMANDO_TIEMPO, TIEMPO_VALOR, POTENCIA_VALOR;
+/* ====== No terminales ====== */
+non terminal PROGRAMA, COMANDOS, COMANDO,
+            COMANDO_ABRIR, COMANDO_CERRAR, COMANDO_ENCENDER, COMANDO_APAGAR,
+            COMANDO_POTENCIA, COMANDO_PAUSAR, COMANDO_COCINAR, COMANDO_TIEMPO,
+            TIEMPO_VALOR, POTENCIA_VALOR;
 
+/* ====== Inicio ====== */
 start with PROGRAMA;
 
-/* Gramática principal */
-PROGRAMA ::= COMANDOS;
+/* ====== Gramática ====== */
 
-COMANDOS ::= 
-    COMANDOS COMANDO |
-    COMANDO
-;
+PROGRAMA ::= COMANDOS ;
 
-COMANDO ::= 
-    COMANDO_ABRIR |
-    COMANDO_CERRAR |
-    COMANDO_ENCENDER |
-    COMANDO_APAGAR |
-    COMANDO_POTENCIA |
-    COMANDO_PAUSAR |
-    COMANDO_COCINAR |
-    COMANDO_TIEMPO
-;
+COMANDOS ::=
+      COMANDOS COMANDO
+    | COMANDO
+    ;
 
-/* Comandos específicos */
-COMANDO_ABRIR ::= Abrir;
-COMANDO_CERRAR ::= Cerrar;
-COMANDO_ENCENDER ::= Encender;
-COMANDO_APAGAR ::= Apagar;
-COMANDO_PAUSAR ::= Pausar;
-COMANDO_COCINAR ::= Cocinar;
+COMANDO ::=
+      COMANDO_ABRIR
+    | COMANDO_CERRAR
+    | COMANDO_ENCENDER
+    | COMANDO_APAGAR
+    | COMANDO_POTENCIA
+    | COMANDO_PAUSAR
+    | COMANDO_COCINAR
+    | COMANDO_TIEMPO
+    ;
+
+/* Comandos sin parámetros */
+COMANDO_ABRIR     ::= Abrir ;
+COMANDO_CERRAR    ::= Cerrar ;
+COMANDO_ENCENDER  ::= Encender ;
+COMANDO_APAGAR    ::= Apagar ;
+COMANDO_PAUSAR    ::= Pausar ;
+COMANDO_COCINAR   ::= Cocinar ;
 
 /* Comandos con parámetros */
-COMANDO_POTENCIA ::= Potencia POTENCIA_VALOR;
-COMANDO_TIEMPO ::= Tiempo TIEMPO_VALOR;
+COMANDO_POTENCIA  ::= Potencia POTENCIA_VALOR ;
+COMANDO_TIEMPO    ::= Tiempo   TIEMPO_VALOR   ;
 
-/* Valores para potencia y tiempo */
-POTENCIA_VALOR ::= 
-    Numero |
-    Numero MAS |
-    Numero MENOS
-;
+/* Valores (si quieres, luego puedes tipar estos no terminales) */
+POTENCIA_VALOR ::=
+      Numero
+    | Numero MAS
+    | Numero MENOS
+    ;
 
-TIEMPO_VALOR ::= 
-    Numero |
-    Numero DOS_PUNTOS Numero
-;
+TIEMPO_VALOR ::=
+      Numero
+    | Numero DOS_PUNTOS Numero
+    ;
