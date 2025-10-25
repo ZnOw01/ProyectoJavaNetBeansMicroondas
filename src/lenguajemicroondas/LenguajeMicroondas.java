@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 public final class LenguajeMicroondas {
 
     private static final Path SOURCE_DIRECTORY = Paths.get("src", "lenguajemicroondas");
+    private static final Path CUP_DIRECTORY = Paths.get("src", "Cup");
     private static final Path PROJECT_ROOT = Paths.get("");
 
     private LenguajeMicroondas() {
@@ -61,14 +62,14 @@ public final class LenguajeMicroondas {
      * carpeta de código fuente.
      */
     public static void generarCup() throws Exception {
-        Path cupFile = SOURCE_DIRECTORY.resolve("Grammar.cup");
+        Path cupFile = CUP_DIRECTORY.resolve("Grammar.cup");
         if (!Files.exists(cupFile)) {
             throw new IllegalStateException("No se encontró la gramática: " + cupFile);
         }
 
         String[] cupArguments = {"-parser", "Syntactic", cupFile.toString()};
 
-        Path cupLexer = SOURCE_DIRECTORY.resolve("entradaCup.jflex");
+        Path cupLexer = CUP_DIRECTORY.resolve("entradaCup.jflex");
         File cupLexerFile = cupLexer.toFile();
         if (cupLexerFile.exists()) {
             JFlex.Main.generate(cupLexerFile);
@@ -76,8 +77,8 @@ public final class LenguajeMicroondas {
 
         java_cup.Main.main(cupArguments);
 
-        moveGeneratedFile("sym.java", SOURCE_DIRECTORY);
-        moveGeneratedFile("Syntactic.java", SOURCE_DIRECTORY);
+        moveGeneratedFile("sym.java", CUP_DIRECTORY);
+        moveGeneratedFile("Syntactic.java", CUP_DIRECTORY);
     }
 
     private static void moveGeneratedFile(String fileName, Path destinationDirectory) throws IOException {
