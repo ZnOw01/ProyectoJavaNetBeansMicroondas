@@ -39,7 +39,7 @@ Numero         = [0-9]+
     ("tiempo"|"TIEMPO")   { return symbol(sym.Tiempo, yytext()); }
     
     /* Números */
-    {Numero}              { return symbol(sym.Numero, new Integer(yytext())); }
+    {Numero}              { return symbol(sym.Numero, Integer.valueOf(yytext())); }
     
     /* Símbolos especiales */
     ":"                   { return symbol(sym.DOS_PUNTOS, yytext()); }
