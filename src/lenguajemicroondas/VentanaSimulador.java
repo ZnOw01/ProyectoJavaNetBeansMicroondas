@@ -35,7 +35,7 @@ public class VentanaSimulador extends JFrame {
     private JPanel panelBotones;
     private JTextArea logArea;
     private Timer timerSimulacion;
-    
+
     private JLabel panelPuertaAnimado;
     private ImageIcon iconoCocinando;
     private ImageIcon iconoDetenido;
@@ -45,6 +45,11 @@ public class VentanaSimulador extends JFrame {
     private enum ModoEntrada { NADA, TIEMPO, POTENCIA }
     private ModoEntrada modoActual = ModoEntrada.NADA;
     private int tiempoSegundos = 0;
+    private int[] segundosRestantes = {0};
+
+    private boolean puertaAbierta = true;
+    private boolean microondasEncendido = false;
+    private boolean simulacionActiva = false;
 
     private static final int MAX_DIGITOS = 5;
     private static final Font FONT_DISPLAY = new Font("Monospaced", Font.BOLD, 32);
@@ -233,9 +238,88 @@ public class VentanaSimulador extends JFrame {
 
     private void onComandoPulsado(String etiqueta, String comando) {
         finalizarEntradaNumerica();
-        comandoParaParser.append(comando).append(" ");
-        display.setText(etiqueta);
-        log("Comando añadido: " + comando);
+
+        switch (comando.toLowerCase()) {
+            case "abrir" -> onAbrir();
+            case "cerrar" -> onCerrar();
+            case "encender" -> onEncender();
+            case "apagar" -> onApagar();
+            case "pausar" -> onPausar();
+            case "reanudar" -> onReanudar();
+            default -> {
+                comandoParaParser.append(comando).append(" ");
+                display.setText(etiqueta);
+                log("Comando añadido: " + comando);
+            }
+        }
+    }
+
+    private void onAbrir() {
+        comandoParaParser.append("abrir ");
+        puertaAbierta = true;
+        display.setText("ABIERTO");
+        log("Puerta abierta");
+
+        if (simulacionActiva) {
+            pausarSimulacion();
+            log("Simulación pausada automáticamente");
+        }
+    }
+
+    private void onCerrar() {
+        comandoParaParser.append("cerrar ");
+        puertaAbierta = false;
+        display.setText("CERRADO");
+        log("Puerta cerrada");
+    }
+
+    private void onEncender() {
+        comandoParaParser.append("encender ");
+        microondasEncendido = true;
+        display.setText("ON");
+        log("Microondas encendido");
+    }
+
+    private void onApagar() {
+        comandoParaParser.append("apagar ");
+        microondasEncendido = false;
+        display.setText("OFF");
+        log("Microondas apagado");
+
+        if (simulacionActiva) {
+            detenerSimulacion();
+            log("Simulación detenida");
+        }
+    }
+
+    private void onPausar() {
+        if (!simulacionActiva) {
+            display.setText("E-PAUSA");
+            log("ERROR: No hay simulación activa para pausar");
+            return;
+        }
+
+        comandoParaParser.append("pausar ");
+        pausarSimulacion();
+        log("Simulación pausada");
+    }
+
+    private void onReanudar() {
+        if (!simulacionActiva || timerSimulacion.isRunning()) {
+            display.setText("E-REANUD");
+            log("ERROR: No hay simulación pausada para reanudar");
+            return;
+        }
+
+        if (puertaAbierta) {
+            display.setText("E-PUERTA");
+            log("ERROR: Cierra la puerta antes de reanudar");
+            return;
+        }
+
+        comandoParaParser.append("reanudar ");
+        reanudarSimulacion();
+        log("Simulación reanudada");
     }
     
     private void onModoPulsado(String etiqueta, ModoEntrada modo) {
@@ -249,6 +333,25 @@ public class VentanaSimulador extends JFrame {
     
     private void onIniciarCoccionPulsado() {
         finalizarEntradaNumerica();
+
+        if (!microondasEncendido) {
+            display.setText("E-APAGADO");
+            log("ERROR: Enciende el microondas primero (botón ON)");
+            return;
+        }
+
+        if (puertaAbierta) {
+            display.setText("E-PUERTA");
+            log("ERROR: Cierra la puerta antes de cocinar");
+            return;
+        }
+
+        if (tiempoSegundos == 0) {
+            display.setText("E-TIEMPO");
+            log("ERROR: Configura el tiempo primero");
+            return;
+        }
+
         comandoParaParser.append("cocinar final ");
         log("Comando añadido: cocinar");
         log("Comando añadido: final");
@@ -343,16 +446,17 @@ public class VentanaSimulador extends JFrame {
     }
 
     private void iniciarSimulacion(int segundos) {
+        simulacionActiva = true;
+        segundosRestantes[0] = segundos;
+
         if (panelPuertaAnimado != null) {
             panelPuertaAnimado.setIcon(iconoCocinando);
         }
-        
-        final int[] segundosRestantes = {segundos};
 
         int minutos = segundosRestantes[0] / 60;
         int segs = segundosRestantes[0] % 60;
         display.setText(String.format("%02d:%02d", minutos, segs));
-        
+
         timerSimulacion = new Timer(1000, e -> {
             segundosRestantes[0]--;
 
@@ -360,6 +464,7 @@ public class VentanaSimulador extends JFrame {
                 timerSimulacion.stop();
                 display.setText("FIN");
                 log("Simulación finalizada.");
+                detenerSimulacion();
                 limpiarTodo();
             } else {
                 int min = segundosRestantes[0] / 60;
@@ -371,11 +476,48 @@ public class VentanaSimulador extends JFrame {
         timerSimulacion.start();
     }
 
+    private void pausarSimulacion() {
+        if (timerSimulacion != null && timerSimulacion.isRunning()) {
+            timerSimulacion.stop();
+            display.setText("PAUSADO");
+            if (panelPuertaAnimado != null) {
+                panelPuertaAnimado.setIcon(iconoDetenido);
+            }
+        }
+    }
+
+    private void reanudarSimulacion() {
+        if (timerSimulacion != null && !timerSimulacion.isRunning() && simulacionActiva) {
+            timerSimulacion.start();
+            if (panelPuertaAnimado != null) {
+                panelPuertaAnimado.setIcon(iconoCocinando);
+            }
+            int min = segundosRestantes[0] / 60;
+            int seg = segundosRestantes[0] % 60;
+            display.setText(String.format("%02d:%02d", min, seg));
+        }
+    }
+
+    private void detenerSimulacion() {
+        if (timerSimulacion != null) {
+            timerSimulacion.stop();
+        }
+        simulacionActiva = false;
+        if (panelPuertaAnimado != null) {
+            panelPuertaAnimado.setIcon(iconoDetenido);
+        }
+    }
+
     private void limpiarTodo() {
         comandoParaParser.setLength(0);
         bufferNumerico.setLength(0);
         modoActual = ModoEntrada.NADA;
         tiempoSegundos = 0;
+        segundosRestantes[0] = 0;
+
+        puertaAbierta = true;
+        microondasEncendido = false;
+        simulacionActiva = false;
 
         if (timerSimulacion != null) {
             timerSimulacion.stop();
@@ -390,9 +532,11 @@ public class VentanaSimulador extends JFrame {
         if (logArea != null) {
             logArea.setText("");
             log("Simulador listo.");
-            log("1. Presiona INICIO");
-            log("2. Configura comandos");
-            log("3. Presiona COCINAR");
+            log("1. INICIO");
+            log("2. ON");
+            log("3. CERRAR");
+            log("4. TIEMPO + número");
+            log("5. COCINAR");
         }
     }
 
