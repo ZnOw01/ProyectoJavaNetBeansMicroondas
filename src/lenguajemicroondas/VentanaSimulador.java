@@ -82,8 +82,7 @@ public class VentanaSimulador extends JFrame {
             iconoCocinando = new ImageIcon(getClass().getResource("/lenguajemicroondas/resources/cooking.gif"));
             iconoDetenido = new ImageIcon(getClass().getResource("/lenguajemicroondas/resources/stopped.png"));
         } catch (Exception e) {
-            log("ADVERTENCIA: No se pudieron cargar los íconos de recursos. La animación no funcionará.");
-            log(e.getMessage());
+            Logger.getLogger(VentanaSimulador.class.getName()).log(Level.WARNING, "No se pudieron cargar recursos de animación", e);
             iconoCocinando = null;
             iconoDetenido = null;
         }
@@ -92,7 +91,7 @@ public class VentanaSimulador extends JFrame {
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
-        setMinimumSize(new Dimension(850, 500));
+        setMinimumSize(new Dimension(900, 580));
         setLocationRelativeTo(null);
         ((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -119,10 +118,14 @@ public class VentanaSimulador extends JFrame {
         display.setBorder(BorderFactory.createLoweredBevelBorder());
         panelControl.add(display, BorderLayout.NORTH);
 
-        panelBotones = new JPanel(new GridLayout(6, 3, 5, 5));
+        panelBotones = new JPanel(new GridLayout(7, 3, 5, 5));
+        panelBotones.add(crearBotonComando("INICIO", "inicio"));
         panelBotones.add(crearBotonComando("ON", "encender"));
+        panelBotones.add(crearBotonComando("OFF", "apagar"));
+
         panelBotones.add(crearBotonComando("ABRIR", "abrir"));
         panelBotones.add(crearBotonComando("CERRAR", "cerrar"));
+        panelBotones.add(crearBotonLimpiar("CLR"));
 
         panelBotones.add(crearBotonModo("POT", ModoEntrada.POTENCIA));
         panelBotones.add(crearBotonModo("TIEMPO", ModoEntrada.TIEMPO));
@@ -140,9 +143,9 @@ public class VentanaSimulador extends JFrame {
         panelBotones.add(crearBotonNumero("2"));
         panelBotones.add(crearBotonNumero("3"));
 
-        panelBotones.add(crearBotonInicio("INICIO"));
+        panelBotones.add(crearBotonComando("REANUDAR", "reanudar"));
         panelBotones.add(crearBotonNumero("0"));
-        panelBotones.add(crearBotonLimpiar("CLR"));
+        panelBotones.add(crearBotonIniciarCoccion("COCINAR"));
 
         panelControl.add(panelBotones, BorderLayout.CENTER);
         return panelControl;
@@ -194,12 +197,12 @@ public class VentanaSimulador extends JFrame {
         return btn;
     }
 
-    private JButton crearBotonInicio(String etiqueta) {
+    private JButton crearBotonIniciarCoccion(String etiqueta) {
         JButton btn = new JButton(etiqueta);
         btn.setBackground(COLOR_BOTON_INICIO);
         btn.setForeground(Color.WHITE);
         btn.setFont(new Font("Arial", Font.BOLD, 14));
-        btn.addActionListener(e -> onInicioPulsado());
+        btn.addActionListener(e -> onIniciarCoccionPulsado());
         return btn;
     }
 
@@ -214,13 +217,13 @@ public class VentanaSimulador extends JFrame {
     private void onNumeroPulsado(String numero) {
         if (modoActual == ModoEntrada.NADA) {
             display.setText("E-MODO");
-            log("ERROR: Intento de ingresar número sin modo (Tiempo/Potencia).");
+            log("ERROR: Debes presionar POT o TIEMPO antes de ingresar números.");
             return;
         }
 
         if (bufferNumerico.length() >= MAX_DIGITOS) {
             display.setText("E-MAX");
-            log("ERROR: Se ha superado el límite de dígitos (" + MAX_DIGITOS + ").");
+            log("ERROR: Máximo " + MAX_DIGITOS + " dígitos permitidos.");
             return;
         }
 
@@ -244,10 +247,11 @@ public class VentanaSimulador extends JFrame {
         log("Modo activado: " + comando + ". Esperando número.");
     }
     
-    private void onInicioPulsado() {
+    private void onIniciarCoccionPulsado() {
         finalizarEntradaNumerica();
-        comandoParaParser.append("cocinar ");
+        comandoParaParser.append("cocinar final ");
         log("Comando añadido: cocinar");
+        log("Comando añadido: final");
         ejecutarAnalisis();
     }
     
@@ -270,7 +274,7 @@ public class VentanaSimulador extends JFrame {
                 tiempoSegundos = valorNumerico;
             }
         } catch (NumberFormatException e) {
-            log("ERROR: El número '" + valor + "' es demasiado grande.");
+            log("ERROR: Número inválido o demasiado grande.");
             display.setText("E-NUM");
         }
 
@@ -280,6 +284,21 @@ public class VentanaSimulador extends JFrame {
 
     private void ejecutarAnalisis() {
         String textoCompleto = comandoParaParser.toString().trim();
+
+        if (!textoCompleto.toLowerCase().startsWith("inicio")) {
+            display.setText("E-INICIO");
+            log("ERROR: El programa debe comenzar con INICIO.");
+            log("Presiona el botón INICIO primero.");
+            return;
+        }
+
+        if (!textoCompleto.toLowerCase().endsWith("final")) {
+            display.setText("E-FINAL");
+            log("ERROR: El programa debe terminar con FINAL.");
+            log("Esto se hace automáticamente al presionar COCINAR.");
+            return;
+        }
+
         log("\n--- INICIANDO ANÁLISIS ---");
         log("Entrada: " + textoCompleto);
 
@@ -290,21 +309,22 @@ public class VentanaSimulador extends JFrame {
         try {
             parser.parse();
             log("ANÁLISIS SINTÁCTICO EXITOSO.");
-            
+
             if (tiempoSegundos == 0) {
                  display.setText("E-TIEMPO");
-                 log("ERROR LÓGICO: El comando es sintácticamente correcto, pero no se especificó tiempo.");
+                 log("ERROR LÓGICO: No se especificó tiempo.");
+                 log("Presiona TIEMPO, ingresa segundos y confirma.");
                  limpiarTodo();
                  return;
             }
-            
+
             log("Iniciando simulación por " + tiempoSegundos + " segundos.");
             iniciarSimulacion(tiempoSegundos);
 
         } catch (Exception ex) {
             display.setText("E-SINTAXIS");
-            log("--- ERROR DE SINTAXIS DETECTADO ---");
-            
+            log("--- ERROR DE SINTAXIS ---");
+
             Symbol symbolError = parser.getS();
             if (symbolError != null) {
                 int line = symbolError.left + 1;
@@ -314,9 +334,8 @@ public class VentanaSimulador extends JFrame {
 
                 log("Token problemático: '" + tokenValue + "' (Tipo: " + tokenName + ")");
                 log("Ubicación: Línea " + line + ", Columna " + column);
-                log("Verifica el orden o la validez de los comandos.");
             } else {
-                log("No se pudo determinar la ubicación exacta del error.");
+                log("No se pudo determinar la ubicación del error.");
             }
             log("--- ANÁLISIS FALLIDO ---");
             limpiarTodo();
@@ -357,20 +376,23 @@ public class VentanaSimulador extends JFrame {
         bufferNumerico.setLength(0);
         modoActual = ModoEntrada.NADA;
         tiempoSegundos = 0;
-        
+
         if (timerSimulacion != null) {
             timerSimulacion.stop();
         }
-        
+
         if (panelPuertaAnimado != null) {
             panelPuertaAnimado.setIcon(iconoDetenido);
         }
-        
+
         display.setText("00:00");
-        
+
         if (logArea != null) {
             logArea.setText("");
-            log("Simulador listo. Ingrese comandos.");
+            log("Simulador listo.");
+            log("1. Presiona INICIO");
+            log("2. Configura comandos");
+            log("3. Presiona COCINAR");
         }
     }
 
@@ -390,12 +412,15 @@ public class VentanaSimulador extends JFrame {
             case sym.MAS -> "MAS";
             case sym.MENOS -> "MENOS";
             case sym.ERROR -> "ERROR";
+            case sym.Inicio -> "Inicio";
+            case sym.Final -> "Final";
             case sym.Abrir -> "Abrir";
             case sym.Cerrar -> "Cerrar";
             case sym.Encender -> "Encender";
             case sym.Apagar -> "Apagar";
             case sym.Potencia -> "Potencia";
             case sym.Pausar -> "Pausar";
+            case sym.Reanudar -> "Reanudar";
             case sym.Cocinar -> "Cocinar";
             case sym.Tiempo -> "Tiempo";
             case sym.EOF -> "EOF";
