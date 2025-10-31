@@ -70,31 +70,27 @@ public class Ventana extends JFrame {
         JButton openButton = new JButton("Abrir archivo");
         openButton.addActionListener(event -> loadFile());
 
-        JButton exampleButton = new JButton("Cargar ejemplo");
-        exampleButton.addActionListener(event -> loadExample());
+        JButton saveInputButton = new JButton("Guardar entrada");
+        saveInputButton.addActionListener(event -> saveInput());
 
         JButton analyzeButton = new JButton("Analizar");
         analyzeButton.addActionListener(event -> analyzeInput());
 
-        JButton saveButton = new JButton("Guardar reporte");
-        saveButton.addActionListener(event -> saveReports());
+        JButton saveReportButton = new JButton("Guardar reporte");
+        saveReportButton.addActionListener(event -> saveReports());
 
         JButton clearButton = new JButton("Limpiar");
         clearButton.addActionListener(event -> clearAll());
 
-        JLabel instructions = new JLabel("Todos los programas DEBEN empezar con INICIO y terminar con FINAL.");
-        instructions.setHorizontalAlignment(SwingConstants.LEFT);
-
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         buttonPanel.add(openButton);
-        buttonPanel.add(exampleButton);
+        buttonPanel.add(saveInputButton);
         buttonPanel.add(analyzeButton);
-        buttonPanel.add(saveButton);
+        buttonPanel.add(saveReportButton);
         buttonPanel.add(clearButton);
 
         JPanel toolbar = new JPanel(new BorderLayout(10, 10));
         toolbar.add(buttonPanel, BorderLayout.WEST);
-        toolbar.add(instructions, BorderLayout.CENTER);
 
         return toolbar;
     }
@@ -154,21 +150,25 @@ public class Ventana extends JFrame {
         }
     }
 
-    private void loadExample() {
-        String example = "# Ejemplo básico con la nueva sintaxis\n" +
-                         "INICIO\n" +
-                         "encender\n" +
-                         "potencia 5\n" +
-                         "tiempo 2:30\n" +
-                         "cocinar\n" +
-                         "pausar\n" +
-                         "reanudar\n" +
-                         "apagar\n" +
-                         "FINAL\n";
-        inputArea.setText(example);
-        inputArea.setCaretPosition(0);
-        lastLexicalReport = "";
-        lastSyntacticReport = "";
+    private void saveInput() {
+        String text = inputArea.getText().trim();
+
+        if (text.isEmpty()) {
+            showWarning("No hay contenido para guardar.");
+            return;
+        }
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            Path path = selectedFile.toPath();
+            try {
+                Files.writeString(path, text, StandardCharsets.UTF_8);
+                showInformation("Archivo guardado exitosamente.");
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, "No se pudo guardar el archivo", ex);
+                showError("No fue posible guardar el archivo.");
+            }
+        }
     }
 
     private void analyzeInput() {
