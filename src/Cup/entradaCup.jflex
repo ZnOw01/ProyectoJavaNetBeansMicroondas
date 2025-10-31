@@ -34,12 +34,15 @@ Comentario     = \# [^\r\n]*
 <YYINITIAL> {
 
     /* Palabras clave (insensible a mayúsculas usando dos variantes) */
+    ("inicio"|"INICIO")       { return symbol(sym.Inicio, yytext()); }
+    ("final"|"FINAL")         { return symbol(sym.Final, yytext()); }
     ("abrir"|"ABRIR")         { return symbol(sym.Abrir, yytext()); }
     ("cerrar"|"CERRAR")       { return symbol(sym.Cerrar, yytext()); }
     ("encender"|"ENCENDER")   { return symbol(sym.Encender, yytext()); }
     ("apagar"|"APAGAR")       { return symbol(sym.Apagar, yytext()); }
     ("potencia"|"POTENCIA")   { return symbol(sym.Potencia, yytext()); }
     ("pausar"|"PAUSAR")       { return symbol(sym.Pausar, yytext()); }
+    ("reanudar"|"REANUDAR")   { return symbol(sym.Reanudar, yytext()); }
     ("cocinar"|"COCINAR")     { return symbol(sym.Cocinar, yytext()); }
     ("tiempo"|"TIEMPO")       { return symbol(sym.Tiempo, yytext()); }
 
