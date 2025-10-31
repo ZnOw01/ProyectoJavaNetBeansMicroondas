@@ -1,6 +1,49 @@
-abrir cerrar encender apagar
-potencia pausar cocinar tiempo
-ABRIR CERRAR ENCENDER APAGAR
-POTENCIA PAUSAR COCINAR TIEMPO
-comando_invalido abrir 123
-encender potencia 5 tiempo 2:30 cocinar
+# Ejemplos con la nueva sintaxis (requiere INICIO y FINAL)
+
+# Ejemplo 1: Programa básico
+INICIO
+encender
+potencia 5
+tiempo 2:30
+cocinar
+apagar
+FINAL
+
+# Ejemplo 2: Con pausa y reanudación
+INICIO
+abrir
+cerrar
+encender
+potencia 8+
+tiempo 1:30
+cocinar
+pausar
+reanudar
+apagar
+FINAL
+
+# Ejemplo 3: Cambio de potencia
+INICIO
+encender
+potencia 3-
+tiempo 5:00
+cocinar
+FINAL
+
+# Ejemplo 4: Comandos en mayúsculas (también válido)
+INICIO
+ABRIR
+CERRAR
+ENCENDER
+POTENCIA 7
+TIEMPO 90
+COCINAR
+PAUSAR
+REANUDAR
+APAGAR
+FINAL
+
+# Nota: Los siguientes programas son INVÁLIDOS por falta de INICIO/FINAL:
+# encender potencia 5 cocinar  ❌ (falta INICIO y FINAL)
+# INICIO encender cocinar       ❌ (falta FINAL)
+# encender cocinar FINAL         ❌ (falta INICIO)

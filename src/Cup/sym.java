@@ -24,5 +24,8 @@ public class sym {
   public static final int Numero = 2;
   public static final int Pausar = 12;
   public static final int Cerrar = 8;
+  public static final int Inicio = 15;
+  public static final int Final = 16;
+  public static final int Reanudar = 17;
 }
 

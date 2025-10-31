@@ -70,6 +70,9 @@ public class Ventana extends JFrame {
         JButton openButton = new JButton("Abrir archivo");
         openButton.addActionListener(event -> loadFile());
 
+        JButton exampleButton = new JButton("Cargar ejemplo");
+        exampleButton.addActionListener(event -> loadExample());
+
         JButton analyzeButton = new JButton("Analizar");
         analyzeButton.addActionListener(event -> analyzeInput());
 
@@ -79,11 +82,12 @@ public class Ventana extends JFrame {
         JButton clearButton = new JButton("Limpiar");
         clearButton.addActionListener(event -> clearAll());
 
-        JLabel instructions = new JLabel("Carga un archivo o escribe comandos y presiona \"Analizar\".");
+        JLabel instructions = new JLabel("Todos los programas DEBEN empezar con INICIO y terminar con FINAL.");
         instructions.setHorizontalAlignment(SwingConstants.LEFT);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         buttonPanel.add(openButton);
+        buttonPanel.add(exampleButton);
         buttonPanel.add(analyzeButton);
         buttonPanel.add(saveButton);
         buttonPanel.add(clearButton);
@@ -148,6 +152,23 @@ public class Ventana extends JFrame {
                 showError("No fue posible leer el archivo seleccionado.");
             }
         }
+    }
+
+    private void loadExample() {
+        String example = "# Ejemplo básico con la nueva sintaxis\n" +
+                         "INICIO\n" +
+                         "encender\n" +
+                         "potencia 5\n" +
+                         "tiempo 2:30\n" +
+                         "cocinar\n" +
+                         "pausar\n" +
+                         "reanudar\n" +
+                         "apagar\n" +
+                         "FINAL\n";
+        inputArea.setText(example);
+        inputArea.setCaretPosition(0);
+        lastLexicalReport = "";
+        lastSyntacticReport = "";
     }
 
     private void analyzeInput() {

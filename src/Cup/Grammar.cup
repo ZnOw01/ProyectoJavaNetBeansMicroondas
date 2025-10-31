@@ -26,19 +26,20 @@ parser code {:
 terminal Integer Numero;
 terminal DOS_PUNTOS, MAS, MENOS, ERROR;
 terminal Abrir, Cerrar, Encender, Apagar, Potencia, Pausar, Cocinar, Tiempo;
+terminal Inicio, Final, Reanudar;
 
 /* ====== No terminales ====== */
 non terminal PROGRAMA, COMANDOS, COMANDO,
             COMANDO_ABRIR, COMANDO_CERRAR, COMANDO_ENCENDER, COMANDO_APAGAR,
             COMANDO_POTENCIA, COMANDO_PAUSAR, COMANDO_COCINAR, COMANDO_TIEMPO,
-            TIEMPO_VALOR, POTENCIA_VALOR;
+            COMANDO_REANUDAR, TIEMPO_VALOR, POTENCIA_VALOR;
 
 /* ====== Inicio ====== */
 start with PROGRAMA;
 
 /* ====== Gramática ====== */
 
-PROGRAMA ::= COMANDOS ;
+PROGRAMA ::= Inicio COMANDOS Final ;
 
 COMANDOS ::=
       COMANDOS COMANDO
@@ -52,6 +53,7 @@ COMANDO ::=
     | COMANDO_APAGAR
     | COMANDO_POTENCIA
     | COMANDO_PAUSAR
+    | COMANDO_REANUDAR
     | COMANDO_COCINAR
     | COMANDO_TIEMPO
     ;
@@ -62,6 +64,7 @@ COMANDO_CERRAR    ::= Cerrar ;
 COMANDO_ENCENDER  ::= Encender ;
 COMANDO_APAGAR    ::= Apagar ;
 COMANDO_PAUSAR    ::= Pausar ;
+COMANDO_REANUDAR  ::= Reanudar ;
 COMANDO_COCINAR   ::= Cocinar ;
 
 /* Comandos con parámetros */
