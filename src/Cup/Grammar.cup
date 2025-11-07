@@ -2,7 +2,6 @@ package Cup;
 
 import java_cup.runtime.*;
 
-/* ====== Código del parser ====== */
 parser code {:
     private Symbol s;
 
@@ -21,24 +20,19 @@ parser code {:
     }
 :};
 
-/* ====== Símbolos léxicos ====== */
-/* ¡Importante! Numero debe ser Integer para recibir el valor del lexer */
 terminal Integer Numero;
 terminal DOS_PUNTOS, MAS, MENOS, ERROR;
 terminal Abrir, Cerrar, Encender, Apagar, Potencia, Pausar, Cocinar, Tiempo;
 terminal Inicio, Final, Reanudar;
 
-/* ====== No terminales ====== */
 non terminal PROGRAMA, COMANDOS, COMANDO,
             COMANDO_ABRIR, COMANDO_CERRAR, COMANDO_ENCENDER, COMANDO_APAGAR,
             COMANDO_POTENCIA, COMANDO_PAUSAR, COMANDO_COCINAR, COMANDO_TIEMPO,
             COMANDO_REANUDAR, TIEMPO_VALOR, POTENCIA_VALOR;
 
-/* ====== Inicio ====== */
 start with PROGRAMA;
 
-/* ====== Gramática ====== */
-
+/* Todo programa debe comenzar con INICIO y terminar con FINAL */
 PROGRAMA ::= Inicio COMANDOS Final ;
 
 COMANDOS ::=
@@ -58,7 +52,6 @@ COMANDO ::=
     | COMANDO_TIEMPO
     ;
 
-/* Comandos sin parámetros */
 COMANDO_ABRIR     ::= Abrir ;
 COMANDO_CERRAR    ::= Cerrar ;
 COMANDO_ENCENDER  ::= Encender ;
@@ -67,17 +60,17 @@ COMANDO_PAUSAR    ::= Pausar ;
 COMANDO_REANUDAR  ::= Reanudar ;
 COMANDO_COCINAR   ::= Cocinar ;
 
-/* Comandos con parámetros */
 COMANDO_POTENCIA  ::= Potencia POTENCIA_VALOR ;
 COMANDO_TIEMPO    ::= Tiempo   TIEMPO_VALOR   ;
 
-/* Valores (si quieres, luego puedes tipar estos no terminales) */
+/* Potencia: número simple o con modificador +/- */
 POTENCIA_VALOR ::=
       Numero
     | Numero MAS
     | Numero MENOS
     ;
 
+/* Tiempo: segundos o formato mm:ss */
 TIEMPO_VALOR ::=
       Numero
     | Numero DOS_PUNTOS Numero
