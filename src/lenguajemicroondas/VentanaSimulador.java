@@ -31,42 +31,42 @@ import javax.swing.border.TitledBorder;
 
 public class VentanaSimulador extends JFrame {
 
-    private JTextField display;
-    private JPanel panelBotones;
-    private JTextArea logArea;
-    private Timer timerSimulacion;
-
-    private JLabel panelPuertaAnimado;
-    private ImageIcon iconoCocinando;
-    private ImageIcon iconoDetenido;
-
-    private final StringBuilder comandoParaParser = new StringBuilder();
-    private final StringBuilder bufferNumerico = new StringBuilder();
-    private enum ModoEntrada { NADA, TIEMPO, POTENCIA }
-    private ModoEntrada modoActual = ModoEntrada.NADA;
-    private int tiempoSegundos = 0;
-    private int[] segundosRestantes = {0};
-
-    private boolean puertaAbierta = true;
-    private boolean microondasEncendido = false;
-    private boolean simulacionActiva = false;
-
     private static final int MAX_DIGITOS = 5;
     private static final Font FONT_DISPLAY = new Font("Monospaced", Font.BOLD, 32);
-    private static final Font FONT_BOTON_NUMERO = new Font("Arial", Font.BOLD, 18);
+    private static final Font FONT_BOTON = new Font("Arial", Font.BOLD, 18);
     private static final Font FONT_LOG = new Font(Font.MONOSPACED, Font.PLAIN, 12);
-    
+
     private static final Color COLOR_DISPLAY_FONDO = Color.BLACK;
     private static final Color COLOR_DISPLAY_TEXTO = new Color(0, 255, 100);
     private static final Color COLOR_PUERTA_FONDO = new Color(50, 50, 50);
     private static final Color COLOR_BOTON_INICIO = new Color(40, 167, 69);
     private static final Color COLOR_BOTON_LIMPIAR = new Color(255, 193, 7);
 
+    private JTextField display;
+    private JTextArea logArea;
+    private JLabel panelPuertaAnimado;
+    private Timer timerSimulacion;
+
+    private ImageIcon iconoCocinando;
+    private ImageIcon iconoDetenido;
+
+    private final StringBuilder comandoParaParser = new StringBuilder();
+    private final StringBuilder bufferNumerico = new StringBuilder();
+    private int[] segundosRestantes = {0};
+    private int tiempoSegundos = 0;
+
+    private enum ModoEntrada { NADA, TIEMPO, POTENCIA }
+    private ModoEntrada modoActual = ModoEntrada.NADA;
+
+    private boolean puertaAbierta = true;
+    private boolean microondasEncendido = false;
+    private boolean simulacionActiva = false;
+
     public VentanaSimulador() {
         super("Simulador de Microondas");
         initLookAndFeel();
         cargarRecursos();
-        initComponents();
+        initUI();
         limpiarTodo();
     }
 
@@ -81,7 +81,7 @@ public class VentanaSimulador extends JFrame {
             }
         }
     }
-    
+
     private void cargarRecursos() {
         try {
             iconoCocinando = new ImageIcon(getClass().getResource("/lenguajemicroondas/resources/cooking.gif"));
@@ -93,7 +93,7 @@ public class VentanaSimulador extends JFrame {
         }
     }
 
-    private void initComponents() {
+    private void initUI() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setMinimumSize(new Dimension(900, 580));
@@ -103,13 +103,13 @@ public class VentanaSimulador extends JFrame {
         JSplitPane panelPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         panelPrincipal.setResizeWeight(0.7);
         panelPrincipal.setBorder(null);
-
         panelPrincipal.setLeftComponent(crearPanelSimulacion());
         panelPrincipal.setRightComponent(crearPanelControl());
 
         add(panelPrincipal, BorderLayout.CENTER);
     }
 
+    /* Panel de control con display y botones */
     private JPanel crearPanelControl() {
         JPanel panelControl = new JPanel(new BorderLayout(10, 10));
         panelControl.setPreferredSize(new Dimension(240, 450));
@@ -123,7 +123,7 @@ public class VentanaSimulador extends JFrame {
         display.setBorder(BorderFactory.createLoweredBevelBorder());
         panelControl.add(display, BorderLayout.NORTH);
 
-        panelBotones = new JPanel(new GridLayout(7, 3, 5, 5));
+        JPanel panelBotones = new JPanel(new GridLayout(7, 3, 5, 5));
         panelBotones.add(crearBotonComando("INICIO", "inicio"));
         panelBotones.add(crearBotonComando("ON", "encender"));
         panelBotones.add(crearBotonComando("OFF", "apagar"));
@@ -156,6 +156,7 @@ public class VentanaSimulador extends JFrame {
         return panelControl;
     }
 
+    /* Panel de simulación con animación y log */
     private JSplitPane crearPanelSimulacion() {
         panelPuertaAnimado = new JLabel();
         panelPuertaAnimado.setBackground(COLOR_PUERTA_FONDO);
@@ -169,7 +170,7 @@ public class VentanaSimulador extends JFrame {
         logArea.setEditable(false);
         logArea.setFont(FONT_LOG);
         logArea.setMargin(new Insets(5, 5, 5, 5));
-        
+
         JScrollPane scrollLogs = new JScrollPane(logArea);
         scrollLogs.setBorder(new TitledBorder("Consola de Análisis"));
         scrollLogs.setMinimumSize(new Dimension(200, 100));
@@ -179,13 +180,14 @@ public class VentanaSimulador extends JFrame {
         panelSimulacion.setBottomComponent(scrollLogs);
         panelSimulacion.setResizeWeight(0.8);
         panelSimulacion.setBorder(null);
-        
+
         return panelSimulacion;
     }
 
+    /* Creación de botones */
     private JButton crearBotonNumero(String numero) {
         JButton btn = new JButton(numero);
-        btn.setFont(FONT_BOTON_NUMERO);
+        btn.setFont(FONT_BOTON);
         btn.addActionListener(e -> onNumeroPulsado(numero));
         return btn;
     }
@@ -215,10 +217,11 @@ public class VentanaSimulador extends JFrame {
         JButton btn = new JButton(etiqueta);
         btn.setBackground(COLOR_BOTON_LIMPIAR);
         btn.setFont(new Font("Arial", Font.BOLD, 14));
-        btn.addActionListener(e -> onLimpiarPulsado());
+        btn.addActionListener(e -> limpiarTodo());
         return btn;
     }
 
+    /* Manejadores de eventos */
     private void onNumeroPulsado(String numero) {
         if (modoActual == ModoEntrada.NADA) {
             display.setText("E-MODO");
@@ -254,6 +257,7 @@ public class VentanaSimulador extends JFrame {
         }
     }
 
+    /* Control de la puerta */
     private void onAbrir() {
         comandoParaParser.append("abrir ");
         puertaAbierta = true;
@@ -273,6 +277,7 @@ public class VentanaSimulador extends JFrame {
         log("Puerta cerrada");
     }
 
+    /* Control de encendido */
     private void onEncender() {
         comandoParaParser.append("encender ");
         microondasEncendido = true;
@@ -292,6 +297,7 @@ public class VentanaSimulador extends JFrame {
         }
     }
 
+    /* Control de pausa/reanudación */
     private void onPausar() {
         if (!simulacionActiva) {
             display.setText("E-PAUSA");
@@ -321,7 +327,7 @@ public class VentanaSimulador extends JFrame {
         reanudarSimulacion();
         log("Simulación reanudada");
     }
-    
+
     private void onModoPulsado(String etiqueta, ModoEntrada modo) {
         finalizarEntradaNumerica();
         modoActual = modo;
@@ -330,7 +336,8 @@ public class VentanaSimulador extends JFrame {
         display.setText("0");
         log("Modo activado: " + comando + ". Esperando número.");
     }
-    
+
+    /* Iniciar cocción con validaciones */
     private void onIniciarCoccionPulsado() {
         finalizarEntradaNumerica();
 
@@ -357,10 +364,6 @@ public class VentanaSimulador extends JFrame {
         log("Comando añadido: final");
         ejecutarAnalisis();
     }
-    
-    private void onLimpiarPulsado() {
-        limpiarTodo();
-    }
 
     private void finalizarEntradaNumerica() {
         if (modoActual == ModoEntrada.NADA || bufferNumerico.length() == 0) {
@@ -385,6 +388,7 @@ public class VentanaSimulador extends JFrame {
         modoActual = ModoEntrada.NADA;
     }
 
+    /* Análisis sintáctico del comando construido */
     private void ejecutarAnalisis() {
         String textoCompleto = comandoParaParser.toString().trim();
 
@@ -445,6 +449,7 @@ public class VentanaSimulador extends JFrame {
         }
     }
 
+    /* Control del timer de simulación */
     private void iniciarSimulacion(int segundos) {
         simulacionActiva = true;
         segundosRestantes[0] = segundos;
@@ -549,6 +554,7 @@ public class VentanaSimulador extends JFrame {
         }
     }
 
+    /* Mapeo de token IDs a nombres */
     private static String tokenName(int id) {
         return switch (id) {
             case sym.Numero -> "Numero";

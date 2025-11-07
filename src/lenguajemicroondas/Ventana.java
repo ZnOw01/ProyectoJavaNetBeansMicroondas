@@ -23,64 +23,57 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import java_cup.runtime.Symbol;
 
-/**
- * Ventana principal de la aplicación del Lenguaje Microondas.
- * Muestra análisis léxico y sintáctico usando JFlex + CUP (LexerCup / Syntactic).
- */
 public class Ventana extends JFrame {
 
     private static final Logger LOGGER = Logger.getLogger(Ventana.class.getName());
-    private static final String APPLICATION_TITLE = "Lenguaje Microondas";
+    private static final String APP_TITLE = "Lenguaje Microondas";
 
     private final JTextArea inputArea = createTextArea(true);
     private final JTextArea lexicalResultArea = createTextArea(false);
     private final JTextArea syntacticResultArea = createTextArea(false);
-
     private final JFileChooser fileChooser = new JFileChooser();
 
     private String lastLexicalReport = "";
     private String lastSyntacticReport = "";
 
     public Ventana() {
-        super(APPLICATION_TITLE);
-        configureWindow();
-        add(createToolbar(), BorderLayout.NORTH);
-        add(createResultsPanel(), BorderLayout.CENTER);
+        super(APP_TITLE);
+        initUI();
     }
 
-    /* ----------------------------- UI ------------------------------ */
-
-    private void configureWindow() {
+    private void initUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setMinimumSize(new Dimension(1000, 600));
         setLocationRelativeTo(null);
+
+        add(createToolbar(), BorderLayout.NORTH);
+        add(createResultsPanel(), BorderLayout.CENTER);
     }
 
+    /* Barra de herramientas */
     private JPanel createToolbar() {
         JButton openButton = new JButton("Abrir archivo");
-        openButton.addActionListener(event -> loadFile());
+        openButton.addActionListener(e -> loadFile());
 
         JButton saveInputButton = new JButton("Guardar entrada");
-        saveInputButton.addActionListener(event -> saveInput());
+        saveInputButton.addActionListener(e -> saveInput());
 
         JButton analyzeButton = new JButton("Analizar");
-        analyzeButton.addActionListener(event -> analyzeInput());
+        analyzeButton.addActionListener(e -> analyzeInput());
 
         JButton saveReportButton = new JButton("Guardar reporte");
-        saveReportButton.addActionListener(event -> saveReports());
+        saveReportButton.addActionListener(e -> saveReports());
 
         JButton clearButton = new JButton("Limpiar");
-        clearButton.addActionListener(event -> clearAll());
+        clearButton.addActionListener(e -> clearAll());
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         buttonPanel.add(openButton);
@@ -95,14 +88,15 @@ public class Ventana extends JFrame {
         return toolbar;
     }
 
+    /* Panel de resultados con tres columnas */
     private JPanel createResultsPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-
         JPanel columnContainer = new JPanel();
         columnContainer.setLayout(new java.awt.GridLayout(1, 3, 10, 0));
-        columnContainer.add(createTitledScrollPane("Entrada", inputArea));
-        columnContainer.add(createTitledScrollPane("Análisis léxico", lexicalResultArea));
-        columnContainer.add(createTitledScrollPane("Análisis sintáctico", syntacticResultArea));
+
+        columnContainer.add(createScrollPane("Entrada", inputArea));
+        columnContainer.add(createScrollPane("Análisis léxico", lexicalResultArea));
+        columnContainer.add(createScrollPane("Análisis sintáctico", syntacticResultArea));
 
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel.add(columnContainer, BorderLayout.CENTER);
@@ -110,7 +104,7 @@ public class Ventana extends JFrame {
         return panel;
     }
 
-    private JScrollPane createTitledScrollPane(String title, JTextArea textArea) {
+    private JScrollPane createScrollPane(String title, JTextArea textArea) {
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setBorder(new TitledBorder(title));
         scrollPane.setPreferredSize(new Dimension(320, 420));
@@ -128,15 +122,16 @@ public class Ventana extends JFrame {
         if (!editable) {
             area.setBackground(new java.awt.Color(245, 245, 245));
         }
+
         return area;
     }
 
-    /* --------------------------- Acciones -------------------------- */
-
+    /* Cargar archivo desde el disco */
     private void loadFile() {
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             Path path = selectedFile.toPath();
+
             try {
                 String content = Files.readString(path, StandardCharsets.UTF_8);
                 inputArea.setText(content);
@@ -144,12 +139,13 @@ public class Ventana extends JFrame {
                 lastLexicalReport = "";
                 lastSyntacticReport = "";
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, "No se pudo leer el archivo", ex);
-                showError("No fue posible leer el archivo seleccionado.");
+                LOGGER.log(Level.SEVERE, "Error al leer archivo", ex);
+                showError("No se pudo leer el archivo.");
             }
         }
     }
 
+    /* Guardar contenido de la entrada */
     private void saveInput() {
         String text = inputArea.getText().trim();
 
@@ -161,16 +157,18 @@ public class Ventana extends JFrame {
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             Path path = selectedFile.toPath();
+
             try {
                 Files.writeString(path, text, StandardCharsets.UTF_8);
                 showInformation("Archivo guardado exitosamente.");
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, "No se pudo guardar el archivo", ex);
-                showError("No fue posible guardar el archivo.");
+                LOGGER.log(Level.SEVERE, "Error al guardar archivo", ex);
+                showError("No se pudo guardar el archivo.");
             }
         }
     }
 
+    /* Ejecutar análisis léxico y sintáctico */
     private void analyzeInput() {
         String text = inputArea.getText().trim();
 
@@ -179,9 +177,9 @@ public class Ventana extends JFrame {
             return;
         }
 
-        // Al escribir, limpia resultados anteriores
         inputArea.addKeyListener(new KeyAdapter() {
-            @Override public void keyReleased(KeyEvent e) {
+            @Override
+            public void keyReleased(KeyEvent e) {
                 lastLexicalReport = "";
                 lastSyntacticReport = "";
             }
@@ -196,157 +194,84 @@ public class Ventana extends JFrame {
             syntacticResultArea.setText(lastSyntacticReport);
             syntacticResultArea.setCaretPosition(0);
         } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, "Error durante el análisis léxico", ex);
-            showError("Ocurrió un error al ejecutar el análisis léxico.");
+            LOGGER.log(Level.SEVERE, "Error durante análisis", ex);
+            showError("Error al ejecutar el análisis.");
         }
     }
 
-    /* ---------------------- Análisis léxico ------------------------ */
-
-    /** Realiza el escaneo con Cup.LexerCup y devuelve un reporte amigable. */
+    /* Análisis léxico: tokeniza el texto */
     private String runLexicalAnalysis(String text) throws IOException {
-        StringBuilder report = new StringBuilder();
-        report.append("=== ANÁLISIS LÉXICO DEL MICROONDAS ===\n\n");
-
         Reader reader = new StringReader(text);
         LexerCup lexer = new LexerCup(reader);
+        StringBuilder report = new StringBuilder();
 
-        int tokenCount = 0;
-        int errorCount = 0;
+        Symbol token;
+        while ((token = lexer.next_token()).sym != sym.EOF) {
+            String tokenType = getTokenName(token.sym);
+            String tokenValue = token.value != null ? token.value.toString() : "";
+            int line = token.left + 1;
+            int column = token.right + 1;
 
-        while (true) {
-            Symbol tok = lexer.next_token();
-            if (tok == null || tok.sym == sym.EOF) break;
-
-            tokenCount++;
-            String name = tokenName(tok.sym);
-
-            if (tok.sym == sym.ERROR) {
-                report.append("ERROR: Carácter no válido '")
-                      .append(tok.value)
-                      .append("'\n");
-                errorCount++;
-                continue;
-            }
-
-            // Mostrar tokens relevantes con su lexema/valor
-            switch (tok.sym) {
-                case sym.Numero -> report.append("[ Numero: ").append(tok.value).append(" ]\n");
-                case sym.Abrir, sym.Cerrar, sym.Encender, sym.Apagar,
-                     sym.Potencia, sym.Pausar, sym.Cocinar, sym.Tiempo ->
-                        report.append("[ Comando: ").append(tok.value)
-                              .append(" : ").append(name).append(" ]\n");
-                case sym.DOS_PUNTOS, sym.MAS, sym.MENOS ->
-                        report.append("[ Símbolo: ").append(name).append(" ]\n");
-                default ->
-                        report.append("[ Token: ").append(name).append(" ]\n");
-            }
+            report.append(String.format("%-15s %-10s L:%d C:%d%n",
+                    tokenType, tokenValue, line, column));
         }
-
-        report.append("\n=== RESUMEN ===\n");
-        report.append("Total de tokens encontrados: ").append(tokenCount).append('\n');
-        report.append("Errores léxicos: ").append(errorCount).append('\n');
-        report.append("=== FIN DEL ANÁLISIS ===");
 
         return report.toString();
     }
 
-    /* -------------------- Análisis sintáctico ---------------------- */
-
+    /* Análisis sintáctico: verifica la gramática */
     private String runSyntacticAnalysis(String text) {
-        StringBuilder report = new StringBuilder();
-        report.append("=== ANÁLISIS SINTÁCTICO DEL MICROONDAS ===\n\n");
-
         Reader reader = new StringReader(text);
-        LexerCup lexerCup = new LexerCup(reader);
-        Syntactic parser = new Syntactic(lexerCup);
+        LexerCup lexer = new LexerCup(reader);
+        Syntactic parser = new Syntactic(lexer);
+        StringBuilder report = new StringBuilder();
 
         try {
             parser.parse();
-            report.append("ANÁLISIS COMPLETADO EXITOSAMENTE\n\n");
-            report.append("El código cumple con la sintaxis correcta del lenguaje del microondas.\n\n");
-            report.append("Estructura válida detectada:\n");
-            report.append("- Comandos reconocidos correctamente\n");
-            report.append("- Secuencia de instrucciones válida\n");
-            report.append("- Sin errores sintácticos\n\n");
+            report.append("✓ Análisis sintáctico exitoso\n");
+            report.append("El programa cumple con la gramática.\n");
         } catch (Exception ex) {
-            LOGGER.log(Level.INFO, "Fallo en el análisis sintáctico", ex);
-            report.append("ERROR SINTÁCTICO DETECTADO\n\n");
+            report.append("✗ Error sintáctico\n\n");
 
-            Symbol symbolError = parser.getS();
-            if (symbolError != null) {
-                int line = symbolError.left + 1;
-                int column = symbolError.right + 1;
-                String tokenValue = symbolError.value != null ? symbolError.value.toString() : "desconocido";
+            Symbol errorSymbol = parser.getS();
+            if (errorSymbol != null) {
+                int line = errorSymbol.left + 1;
+                int column = errorSymbol.right + 1;
+                String tokenValue = errorSymbol.value != null ? errorSymbol.value.toString() : "?";
 
-                report.append("Ubicación del error:\n");
-                report.append("  - Línea: ").append(line).append('\n');
-                report.append("  - Columna: ").append(column).append('\n');
-                report.append("  - Token problemático: ").append(tokenValue).append("\n\n");
-
-                report.append("Posibles soluciones:\n");
-                report.append("  • Verifica que los comandos estén bien escritos\n");
-                report.append("  • Revisa que la sintaxis de Potencia incluya número (opcional + o -)\n");
-                report.append("  • Confirma que Tiempo tenga formato número o número:número\n");
-                report.append("  • Asegúrate de que los comandos estén en el orden correcto\n\n");
-            } else {
-                report.append("No se pudo determinar la ubicación exacta del error.\n");
-                report.append("Revisa la estructura general del código.\n\n");
+                report.append("Token problemático: ").append(tokenValue).append("\n");
+                report.append("Ubicación: Línea ").append(line).append(", Columna ").append(column).append("\n\n");
             }
+
+            report.append("Detalles: ").append(ex.getMessage());
         }
 
-        report.append("=== FIN DEL ANÁLISIS SINTÁCTICO ===");
         return report.toString();
     }
 
-    /* ----------------------------- Utils --------------------------- */
-
-    private static String tokenName(int id) {
-        // Mapea ids de sym.* a nombres legibles
-        if (id == sym.Numero)      return "Numero";
-        if (id == sym.DOS_PUNTOS)  return "DOS_PUNTOS";
-        if (id == sym.MAS)         return "MAS";
-        if (id == sym.MENOS)       return "MENOS";
-        if (id == sym.ERROR)       return "ERROR";
-        if (id == sym.Abrir)       return "Abrir";
-        if (id == sym.Cerrar)      return "Cerrar";
-        if (id == sym.Encender)    return "Encender";
-        if (id == sym.Apagar)      return "Apagar";
-        if (id == sym.Potencia)    return "Potencia";
-        if (id == sym.Pausar)      return "Pausar";
-        if (id == sym.Cocinar)     return "Cocinar";
-        if (id == sym.Tiempo)      return "Tiempo";
-        if (id == sym.EOF)         return "EOF";
-        return "TOK(" + id + ")";
-    }
-
+    /* Guardar reporte de análisis */
     private void saveReports() {
-        if (lastLexicalReport.isBlank() && lastSyntacticReport.isBlank()) {
+        if (lastLexicalReport.isEmpty() && lastSyntacticReport.isEmpty()) {
             showWarning("Realiza un análisis antes de guardar el reporte.");
             return;
         }
 
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File destination = fileChooser.getSelectedFile();
-            Path path = destination.toPath();
-            if (!path.toString().toLowerCase().endsWith(".txt")) {
-                path = path.resolveSibling(path.getFileName() + ".txt");
-            }
+            File selectedFile = fileChooser.getSelectedFile();
+            Path path = selectedFile.toPath();
 
-            StringBuilder builder = new StringBuilder();
-            if (!lastLexicalReport.isBlank()) {
-                builder.append(lastLexicalReport).append("\n\n");
-            }
-            if (!lastSyntacticReport.isBlank()) {
-                builder.append(lastSyntacticReport);
-            }
+            StringBuilder fullReport = new StringBuilder();
+            fullReport.append("=== ANÁLISIS LÉXICO ===\n\n");
+            fullReport.append(lastLexicalReport);
+            fullReport.append("\n\n=== ANÁLISIS SINTÁCTICO ===\n\n");
+            fullReport.append(lastSyntacticReport);
 
             try {
-                Files.writeString(path, builder.toString(), StandardCharsets.UTF_8);
+                Files.writeString(path, fullReport.toString(), StandardCharsets.UTF_8);
                 showInformation("Reporte guardado en: " + path);
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, "No se pudo guardar el archivo", ex);
-                showError("No fue posible guardar el reporte.");
+                LOGGER.log(Level.SEVERE, "Error al guardar reporte", ex);
+                showError("No se pudo guardar el reporte.");
             }
         }
     }
@@ -369,5 +294,28 @@ public class Ventana extends JFrame {
 
     private void showInformation(String message) {
         JOptionPane.showMessageDialog(this, message, "Información", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /* Mapeo de IDs de tokens a nombres legibles */
+    private String getTokenName(int tokenId) {
+        return switch (tokenId) {
+            case sym.Inicio -> "INICIO";
+            case sym.Final -> "FINAL";
+            case sym.Abrir -> "ABRIR";
+            case sym.Cerrar -> "CERRAR";
+            case sym.Encender -> "ENCENDER";
+            case sym.Apagar -> "APAGAR";
+            case sym.Potencia -> "POTENCIA";
+            case sym.Pausar -> "PAUSAR";
+            case sym.Reanudar -> "REANUDAR";
+            case sym.Cocinar -> "COCINAR";
+            case sym.Tiempo -> "TIEMPO";
+            case sym.Numero -> "NUMERO";
+            case sym.DOS_PUNTOS -> "DOS_PUNTOS";
+            case sym.MAS -> "MAS";
+            case sym.MENOS -> "MENOS";
+            case sym.ERROR -> "ERROR";
+            default -> "DESCONOCIDO";
+        };
     }
 }
